@@ -21,7 +21,7 @@ pipeline {
 
         stage('Run') {
             steps {
-                sh 'java Main'
+                sh 'echo "quit" | java Main'
             }
         }
     }
