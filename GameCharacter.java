@@ -1,55 +1,46 @@
-public class GameEnding {
-    // Yafa's part
-    // flag to check if the game has finished or not
-    // final --> value is set once and cannot change after initialization
-    private final boolean ended;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-    // type of ending --> could be "approved", "containment", "shutdown"
-    // helps distinguish how the game ended
-    private final String endingType;
+public class GameCharacter {
 
-    // message to display to the player when game ends
-    private final String message;
+    private final String name;
+    private final String defaultDialogue;
+    private final Map<String, String> sceneDialogue = new LinkedHashMap<>();
+    private final Map<String, String> conditionalDialogue = new LinkedHashMap<>();
 
-    // private constructor --> prevents creating objects directly using "new" from outside the class
-    // this forces all object creation to go through the static methods (continueGame / endWith)
-    // ensures only valid game states are created (avoids missing type/message bugs)
-    // also makes the code more readable and controlled (kind of like a "safe builder")
-    private GameEnding(boolean ended, String endingType, String message) {
-        this.ended = ended;
-        this.endingType = endingType;
-        this.message = message;
+    public GameCharacter(String name, String defaultDialogue) {
+        this.name = name;
+        this.defaultDialogue = defaultDialogue;
     }
 
-    // used when the game is still running
-    // static method --> belong to class not object / can be there with no object
-    public static GameEnding continueGame() {
-        // ended = false  --> game not finished yet
-        // no type/message needed
-        return new GameEnding(false, null, null);
+    // fluent builder methods so CharacterFactory can chain calls
+    public GameCharacter addSceneDialogue(String sceneKey, String text) {
+        sceneDialogue.put(sceneKey.toLowerCase(), text);
+        return this;
     }
 
-    // static method --> used when the game ends
-    public static GameEnding endWith(String type, String msg) {
-        // ended = true --> game finished
-        // store ending type and message for later use
-        return new GameEnding(true, type, msg);
+    public GameCharacter addConditionalDialogue(String flag, String text) {
+        conditionalDialogue.put(flag, text);
+        return this;
     }
 
-    // checks if the game has ended
-    public boolean hasEnded() {
-        return ended;
+    public String getName() {
+        return name;
     }
 
-    // returns the type of ending (can be used for logic or display)
-    public String getEndingType() {
-        return endingType;
-    }
+    // decides what this character says based on story flags first, then scene, then default
+    public String getDialogue(GameState state) {
+        for (Map.Entry<String, String> entry : conditionalDialogue.entrySet()) {
+            if (state.didHappen(entry.getKey())) {
+                return name + ": \"" + entry.getValue() + "\"";
+            }
+        }
 
-    // returns the message shown to the player (for verification)
-    public String getMessage() {
-        return message;
-    }
+        String sceneKey = state.getLocation().toLowerCase();
+        if (sceneDialogue.containsKey(sceneKey)) {
+            return name + ": \"" + sceneDialogue.get(sceneKey) + "\"";
+        }
 
-    // this class is for terminating the game purpose.
+        return name + ": \"" + defaultDialogue + "\"";
+    }
 }
